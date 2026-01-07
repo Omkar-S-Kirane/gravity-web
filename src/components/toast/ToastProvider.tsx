@@ -25,39 +25,58 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 
 type VisibleToast = Readonly<{ payload: ToastPayload; visible: boolean }>;
 
+function normalizePayload(payload: ToastPayload): ToastPayload {
+  return {
+    durationMs: payload.durationMs ?? 2200,
+    variant: payload.variant ?? 'info',
+    title: payload.title,
+    message: payload.message,
+  };
+}
+
 export function ToastProvider({ children }: PropsWithChildren) {
   const [toast, setToast] = useState<VisibleToast | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queueRef = useRef<ToastPayload[]>([]);
+  const isShowingRef = useRef(false);
 
-  const hide = useCallback(() => {
+  const showNext = useCallback(() => {
+    const next = queueRef.current.shift();
+    if (!next) {
+      isShowingRef.current = false;
+      setToast(null);
+      return;
+    }
+
+    const normalized = normalizePayload(next);
+    isShowingRef.current = true;
+
+    setToast({ payload: normalized, visible: false });
+    requestAnimationFrame(() => {
+      setToast({ payload: normalized, visible: true });
+    });
+
     if (hideTimer.current) {
       clearTimeout(hideTimer.current);
       hideTimer.current = null;
     }
-
-    setToast(prev => (prev ? { ...prev, visible: false } : null));
-
-    setTimeout(() => {
-      setToast(null);
-    }, 180);
+    hideTimer.current = setTimeout(() => {
+      setToast(prev => (prev ? { ...prev, visible: false } : null));
+      setTimeout(() => {
+        showNext();
+      }, 180);
+    }, normalized.durationMs);
   }, []);
 
   const show = useCallback(
-    ({ durationMs = 2200, variant = 'info', ...payload }: ToastPayload) => {
-      if (hideTimer.current) {
-        clearTimeout(hideTimer.current);
-        hideTimer.current = null;
+    (payload: ToastPayload) => {
+      queueRef.current.push(normalizePayload(payload));
+
+      if (!isShowingRef.current) {
+        showNext();
       }
-
-      setToast({ payload: { ...payload, durationMs, variant }, visible: false });
-
-      requestAnimationFrame(() => {
-        setToast({ payload: { ...payload, durationMs, variant }, visible: true });
-      });
-
-      hideTimer.current = setTimeout(hide, durationMs);
     },
-    [hide],
+    [showNext],
   );
 
   const value = useMemo(() => ({ show }), [show]);

@@ -23,6 +23,10 @@ type FlowState = Readonly<{
   progressPercent: number | null;
 }>;
 
+type Params = Readonly<{
+  onStoryAuthRequired?: () => void;
+}>;
+
 type ManualPasteState = Readonly<{
   isOpen: boolean;
   open: () => void;
@@ -63,7 +67,7 @@ async function downloadResolved(params: Readonly<{
   }
 }
 
-export function useClipboardDownloadFlow() {
+export function useClipboardDownloadFlow(params?: Params) {
   const { show } = useToast();
   const clipboard = useMemo(() => createClipboardService(), []);
   const downloader = useMemo(() => createDownloaderService(), []);
@@ -115,6 +119,10 @@ export function useClipboardDownloadFlow() {
       const toast = toastForInstagramResult(resolution);
       if (toast) {
         show(toast);
+
+        if (resolution.kind === 'requires_login' && resolution.reason === 'story_requires_auth') {
+          params?.onStoryAuthRequired?.();
+        }
         return;
       }
 

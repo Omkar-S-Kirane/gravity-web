@@ -76,7 +76,13 @@ async function proxyFetch(req: HttpRequest): Promise<HttpResponse> {
 
 export function createWebHttpClient(): HttpClient {
   return async (req: HttpRequest) => {
-    const useProxy = req.policy === 'story' || req.policy === 'session';
+    const host = req.url.hostname.toLowerCase();
+    const isInstagramHost = host === 'instagram.com' || host.endsWith('.instagram.com') || host === 'i.instagram.com';
+
+    // Browser fetch to Instagram endpoints is commonly blocked by CORS and manifests as a fetch failure.
+    // To keep resolver errors truthful (and avoid misclassifying CORS as "network"), we route all
+    // Instagram host requests through the proxy.
+    const useProxy = isInstagramHost || req.policy === 'story' || req.policy === 'session';
     return useProxy ? proxyFetch(req) : directFetch(req);
   };
 }

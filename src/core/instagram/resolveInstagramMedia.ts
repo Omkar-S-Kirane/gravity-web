@@ -21,7 +21,9 @@ export async function resolveInstagramMedia(params: ResolveInstagramMediaParams)
     const result = await resolvePostReelTvByShortcode({
       kind: normalized.type.kind,
       shortcode: normalized.type.shortcode,
-      authCookie: authCookie ?? null,
+      // Web parity: public posts/reels must not depend on (or be broken by) a stored session cookie.
+      // Stories are the only media type that should use authCookie.
+      authCookie: null,
     });
 
     if (result.kind === 'resolved') return { kind: 'resolved', items: result.items };

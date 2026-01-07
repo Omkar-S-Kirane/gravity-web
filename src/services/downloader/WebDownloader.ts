@@ -135,8 +135,8 @@ function downloadMany(params: Readonly<{ items: readonly DownloadItem[]; onProgr
       const item = params.items[i];
       const wrappedOnProgress = params.onProgress
         ? (p: DownloadProgress) => {
-            const step = p.fraction ?? 0;
-            const fraction = total > 0 ? (i + step) / total : null;
+            const fraction =
+              total > 0 && p.fraction !== null && p.fraction !== undefined ? (i + p.fraction) / total : null;
             params.onProgress?.({
               receivedBytes: p.receivedBytes,
               totalBytes: p.totalBytes,

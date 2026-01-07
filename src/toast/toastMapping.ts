@@ -61,6 +61,18 @@ export function toastForInstagramResult(result: InstagramResolveResult): ToastPa
             : 'This link appears to require login. Only publicly accessible links are supported.',
         variant: 'info',
       };
+    case 'access_gated':
+      return {
+        title: 'Access gated',
+        message: 'Instagram blocked this request (consent/region gate). Try again later.',
+        variant: 'info',
+      };
+    case 'session_invalid':
+      return {
+        title: 'Session invalid',
+        message: 'Your session appears to be invalid or challenged. Refresh your cookie and try again.',
+        variant: 'info',
+      };
     case 'media_not_found':
       return {
         title: 'Media not found',
@@ -74,18 +86,6 @@ export function toastForInstagramResult(result: InstagramResolveResult): ToastPa
           'Instagram returned data for a different post than the shortcode in your link. Nothing was downloaded to avoid saving the wrong media.',
         variant: 'info',
       };
-    case 'session_invalid':
-      return {
-        title: 'Session invalid',
-        message: 'Your session appears to be invalid or challenged. Refresh your cookie and try again.',
-        variant: 'info',
-      };
-    case 'access_gated':
-      return {
-        title: 'Access gated',
-        message: 'Instagram blocked this request (consent/region gate). Try again later.',
-        variant: 'info',
-      };
     case 'failed':
       if (result.reason === 'rate_limited') {
         return {
@@ -94,9 +94,25 @@ export function toastForInstagramResult(result: InstagramResolveResult): ToastPa
           variant: 'info',
         };
       }
+
+      if (result.reason === 'unexpected_response') {
+        return {
+          title: 'Could not resolve link',
+          message: 'The public page did not expose a downloadable media URL. Try a different link.',
+          variant: 'info',
+        };
+      }
+
+      if (result.reason === 'network') {
+        return {
+          title: 'Network error',
+          message: 'A network request failed. Please check your connection and try again.',
+          variant: 'error',
+        };
+      }
       return {
         title: 'Could not resolve link',
-        message: result.reason === 'network' ? 'Network error. Please try again.' : 'Unexpected response. Please try again.',
+        message: 'Please try again.',
         variant: 'error',
       };
     default:

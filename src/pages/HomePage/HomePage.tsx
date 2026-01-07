@@ -6,12 +6,18 @@ import { InstagramCookieModal } from '../../components/modals/InstagramCookieMod
 import { ManualPasteModal } from '../../components/modals/ManualPasteModal';
 import { VignetteBackground } from '../../components/VignetteBackground/VignetteBackground';
 import { useClipboardDownloadFlow } from '../../hooks/useClipboardDownloadFlow';
+import { loadInstagramAuthCookie } from '../../services/instagramAuth/authStorage';
 import { formatBytes } from '../../utils/format';
 
 export function HomePage() {
-  const { state, run, manualPaste } = useClipboardDownloadFlow();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [cookieDraft, setCookieDraft] = useState('');
+
+  const { state, run, manualPaste } = useClipboardDownloadFlow({
+    onStoryAuthRequired: () => {
+      setSettingsOpen(true);
+    },
+  });
 
   const ctaLabel = useMemo(() => {
     if (!state.isBusy) return undefined;
@@ -33,7 +39,7 @@ export function HomePage() {
   return (
     <VignetteBackground>
       <div className="min-h-screen px-6 pb-11">
-        <div className="mx-auto flex min-h-screen w-full max-w-[480px] flex-col">
+        <div className="mx-auto flex min-h-screen w-full max-w-[480px] flex-col sm:max-w-[520px] md:max-w-[560px]">
           <header className="pt-16 text-center">
             <h1 className="text-[20px] font-light tracking-[6px] text-textPrimary/90">GRAVITY</h1>
             <p className="mt-2.5 text-[11px] font-light tracking-[5px] text-textSecondary/90">
@@ -66,7 +72,18 @@ export function HomePage() {
               type="button"
               className="mt-4 text-[12px] font-light tracking-[5px] text-accent/90"
               onClick={() => {
-                setSettingsOpen(true);
+                loadInstagramAuthCookie()
+                  .then(v => {
+                    if (typeof v === 'string') {
+                      setCookieDraft(v);
+                    }
+                  })
+                  .catch(() => {
+                    // ignore
+                  })
+                  .finally(() => {
+                    setSettingsOpen(true);
+                  });
               }}
             >
               OMKAR KIRANE
@@ -75,10 +92,6 @@ export function HomePage() {
               © {new Date().getFullYear()} · All rights reserved
             </p>
           </footer>
-        </div>
-
-        <div className="mx-auto hidden max-w-[1024px] md:block">
-          <div className="h-0" />
         </div>
       </div>
 

@@ -24,12 +24,12 @@ export function CircularCta({ onPress, disabled = false, busy = false, label, si
       <div
         aria-hidden
         className={
-          'absolute inset-0 rounded-full bg-white/[0.03] ' +
+          'absolute inset-0 rounded-full bg-white/[0.045] ' +
           (busy ? 'animate-pulse opacity-30' : 'opacity-20')
         }
       />
-      <div aria-hidden className="absolute inset-0 rounded-full border-2 border-white/20" />
-      <div aria-hidden className="absolute inset-[4%] rounded-full border border-white/10 bg-white/[0.015]" />
+      <div aria-hidden className="absolute inset-0 rounded-full border-2 border-white/25" />
+      <div aria-hidden className="absolute inset-[4%] rounded-full border border-white/15 bg-white/[0.02]" />
       <div aria-hidden className="absolute inset-[19%] rounded-full bg-white/10 opacity-[0.12]" />
 
       {label ? (
