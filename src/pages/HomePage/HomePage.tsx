@@ -1,6 +1,35 @@
+import { useMemo, useState } from 'react';
+
+import { CircularCta } from '../../components/CircularCta/CircularCta';
+import { ProgressBar } from '../../components/ProgressBar/ProgressBar';
+import { InstagramCookieModal } from '../../components/modals/InstagramCookieModal';
+import { ManualPasteModal } from '../../components/modals/ManualPasteModal';
 import { VignetteBackground } from '../../components/VignetteBackground/VignetteBackground';
+import { useClipboardDownloadFlow } from '../../hooks/useClipboardDownloadFlow';
+import { formatBytes } from '../../utils/format';
 
 export function HomePage() {
+  const { state, run, manualPaste } = useClipboardDownloadFlow();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [cookieDraft, setCookieDraft] = useState('');
+
+  const ctaLabel = useMemo(() => {
+    if (!state.isBusy) return undefined;
+    if (state.isResolving) return '…';
+    const pct = state.progressPercent;
+    if (pct === null) {
+      const received = state.progress?.receivedBytes ?? 0;
+      if (received > 0) return formatBytes(received);
+      return '…';
+    }
+    return `${pct}%`;
+  }, [
+    state.isBusy,
+    state.isResolving,
+    state.progressPercent,
+    state.progress?.receivedBytes,
+  ]);
+
   return (
     <VignetteBackground>
       <div className="min-h-screen px-6 pb-11">
@@ -13,14 +42,33 @@ export function HomePage() {
           </header>
 
           <main className="flex flex-1 items-center justify-center pb-3">
-            <button
-              type="button"
-              className="h-[208px] w-[208px] rounded-full border border-white/20 bg-white/[0.015] shadow-[0_14px_26px_rgba(0,0,0,0.65)]"
-            />
+            <div className="flex flex-col items-center">
+              <CircularCta onPress={run} disabled={state.isBusy} busy={state.isBusy} label={ctaLabel} />
+
+              {state.isBusy && state.progressPercent !== null ? (
+                <div className="mt-[18px] w-[240px]">
+                  <ProgressBar fraction={(state.progress?.fraction ?? 0) as number} height={6} />
+                </div>
+              ) : null}
+
+              {state.isBusy && state.progressPercent === null && (state.progress?.receivedBytes ?? 0) > 0 ? (
+                <div className="mt-4">
+                  <div className="text-[12px] tracking-[2px] text-textSecondary/80">
+                    {formatBytes(state.progress?.receivedBytes ?? 0)}
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </main>
 
           <footer className="pb-1 text-center">
-            <button type="button" className="mt-4 text-[12px] font-light tracking-[5px] text-accent/90">
+            <button
+              type="button"
+              className="mt-4 text-[12px] font-light tracking-[5px] text-accent/90"
+              onClick={() => {
+                setSettingsOpen(true);
+              }}
+            >
               OMKAR KIRANE
             </button>
             <p className="mt-1.5 text-[8px] tracking-[3px] text-textSecondary/70">
@@ -33,6 +81,19 @@ export function HomePage() {
           <div className="h-0" />
         </div>
       </div>
+
+      <InstagramCookieModal
+        open={settingsOpen}
+        initialDraft={cookieDraft}
+        onDraftChange={setCookieDraft}
+        onClose={() => setSettingsOpen(false)}
+      />
+
+      <ManualPasteModal
+        open={manualPaste.isOpen}
+        onClose={manualPaste.close}
+        onSubmit={manualPaste.submit}
+      />
     </VignetteBackground>
   );
 }
