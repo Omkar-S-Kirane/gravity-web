@@ -5,10 +5,10 @@ type Props = Readonly<{
   disabled?: boolean;
   busy?: boolean;
   label?: ReactNode;
-  size?: number;
+  size?: number | string;
 }>;
 
-export function CircularCta({ onPress, disabled = false, busy = false, label, size = 208 }: Props) {
+export function CircularCta({ onPress, disabled = false, busy = false, label, size = 'clamp(208px, 62vw, 248px)' }: Props) {
   return (
     <button
       type="button"
@@ -24,13 +24,13 @@ export function CircularCta({ onPress, disabled = false, busy = false, label, si
       <div
         aria-hidden
         className={
-          'absolute inset-0 rounded-full bg-white/[0.045] ' +
-          (busy ? 'animate-pulse opacity-30' : 'opacity-20')
+          'absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0.012)_58%,rgba(255,255,255,0)_100%)] ' +
+          (busy ? 'animate-pulse opacity-45' : 'opacity-20')
         }
       />
-      <div aria-hidden className="absolute inset-0 rounded-full border-2 border-white/25" />
-      <div aria-hidden className="absolute inset-[4%] rounded-full border border-white/15 bg-white/[0.02]" />
-      <div aria-hidden className="absolute inset-[19%] rounded-full bg-white/10 opacity-[0.12]" />
+      <div aria-hidden className="absolute inset-0 rounded-full border border-white/20" />
+      <div aria-hidden className="absolute inset-[6px] rounded-full border border-white/10" />
+      <div aria-hidden className="absolute inset-[18%] rounded-full bg-white/[0.008]" />
 
       {label ? (
         <div

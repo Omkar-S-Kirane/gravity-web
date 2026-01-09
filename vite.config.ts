@@ -2,6 +2,22 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 
 function instagramProxyPlugin(): Plugin {
+  function cookieFromSetCookies(setCookies: string[]): string | null {
+    const keys = new Set(['csrftoken', 'mid', 'ig_did', 'datr', 'rur']);
+    const out: string[] = [];
+    for (const sc of setCookies) {
+      const first = sc.split(';')[0] ?? '';
+      const idx = first.indexOf('=');
+      if (idx <= 0) continue;
+      const k = first.slice(0, idx).trim();
+      const v = first.slice(idx + 1).trim();
+      if (!k || !v) continue;
+      if (!keys.has(k)) continue;
+      out.push(`${k}=${v}`);
+    }
+    return out.length > 0 ? out.join('; ') : null;
+  }
+
   return {
     name: 'instagram-proxy',
     apply: 'serve',
@@ -77,6 +93,35 @@ function instagramProxyPlugin(): Plugin {
           for (const [k, v] of Object.entries(incomingHeaders)) {
             if (!allow.has(k.toLowerCase())) continue;
             forwarded[k] = v;
+          }
+
+          if (!Object.keys(forwarded).some(k => k.toLowerCase() === 'cookie')) {
+            try {
+              const priming = await fetch('https://www.instagram.com/', {
+                method: 'GET',
+                headers: {
+                  accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                  'accept-language': 'en-US,en;q=0.9',
+                  'user-agent': 'Mozilla/5.0',
+                },
+                redirect: 'follow',
+              });
+
+              const getSetCookie = (priming.headers as unknown as { getSetCookie?: () => string[] }).getSetCookie;
+              const setCookies =
+                typeof getSetCookie === 'function'
+                  ? getSetCookie.call(priming.headers)
+                  : priming.headers.get('set-cookie')
+                    ? [String(priming.headers.get('set-cookie'))]
+                    : [];
+
+              const guestCookie = cookieFromSetCookies(setCookies);
+              if (guestCookie) {
+                forwarded.cookie = guestCookie;
+              }
+            } catch {
+              // ignore
+            }
           }
 
           const upstream = await fetch(target.toString(), {

@@ -1,1 +1,22 @@
-@import './styles/globals.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #0b0c0f;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+#root {
+  min-height: 100vh;
+}

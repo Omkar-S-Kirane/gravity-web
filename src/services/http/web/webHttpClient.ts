@@ -3,8 +3,19 @@ import type { HttpClient, HttpRequest, HttpResponse } from '../types';
 function sanitizeHeadersForDirectFetch(headers: Readonly<Record<string, string>>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(headers)) {
-    if (k.toLowerCase() === 'cookie') continue;
-    out[k] = v;
+    const lower = k.toLowerCase();
+    // Direct browser fetch must avoid non-simple headers to reduce CORS preflight / gating.
+    // Cookie is never allowed for direct fetch.
+    if (lower === 'cookie') continue;
+    if (lower === 'x-ig-app-id') continue;
+    if (lower === 'x-ig-www-claim') continue;
+    if (lower === 'x-requested-with') continue;
+    if (lower === 'user-agent') continue;
+
+    // Keep only headers that are typically CORS-safe / simple.
+    if (lower === 'accept' || lower === 'accept-language' || lower === 'range') {
+      out[k] = v;
+    }
   }
   return out;
 }
@@ -79,9 +90,9 @@ export function createWebHttpClient(): HttpClient {
     const host = req.url.hostname.toLowerCase();
     const isInstagramHost = host === 'instagram.com' || host.endsWith('.instagram.com') || host === 'i.instagram.com';
 
-    // Browser fetch to Instagram endpoints is commonly blocked by CORS and manifests as a fetch failure.
-    // To keep resolver errors truthful (and avoid misclassifying CORS as "network"), we route all
-    // Instagram host requests through the proxy.
+    // Browser fetch to Instagram endpoints is commonly blocked by CORS.
+    // We route Instagram-host requests through the proxy, but still rely on policy
+    // and header sanitization to ensure cookies are never used for public post/reel/tv.
     const useProxy = isInstagramHost || req.policy === 'story' || req.policy === 'session';
     return useProxy ? proxyFetch(req) : directFetch(req);
   };

@@ -109,7 +109,9 @@ export function useClipboardDownloadFlow(params?: Params) {
         return;
       }
 
-      const cookie = await loadInstagramAuthCookie();
+      const path = parsed.url.pathname.toLowerCase();
+      const isStory = path.startsWith('/stories/');
+      const cookie = isStory ? await loadInstagramAuthCookie() : null;
       const resolution = await resolveInstagramMedia({ url: parsed.url, authCookie: cookie });
 
       if (isMounted.current) {

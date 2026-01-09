@@ -120,18 +120,24 @@ async function fetchJson(params: Readonly<{ url: string; cookie?: string | null;
   text: string;
   finalUrl: string;
 }> {
+  const headers: Record<string, string> = {
+    accept: 'application/json,text/plain,*/*',
+    'accept-language': 'en-US,en;q=0.9',
+  };
+
+  // RN parity: Instagram's JSON endpoints often expect these headers even without a session cookie.
+  // In the browser we send them via the proxy layer to avoid CORS issues.
+  headers['x-ig-app-id'] = '936619743392459';
+  headers['x-ig-www-claim'] = '0';
+  headers['x-requested-with'] = 'XMLHttpRequest';
+
   const res = await httpClient({
     method: 'GET',
     url: new URL(params.url),
     policy: params.policy,
     headers: {
-      accept: 'application/json,text/plain,*/*',
-      'accept-language': 'en-US,en;q=0.9',
-      'user-agent': 'Mozilla/5.0',
-      'x-ig-app-id': '936619743392459',
-      'x-ig-www-claim': '0',
-      'x-requested-with': 'XMLHttpRequest',
-      ...(params.cookie ? { cookie: params.cookie } : null),
+      ...headers,
+      ...(params.cookie && params.policy === 'session' ? { cookie: params.cookie } : null),
     },
   });
 
